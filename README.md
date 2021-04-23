@@ -1,0 +1,2 @@
+# pydicates
+Predicates for Python
