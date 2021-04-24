@@ -48,7 +48,7 @@ def normalize_predicate(value: typing.Any) -> 'Predicate':
     if isinstance(value, Predicate):
         return value
 
-    return Predicate('identity', arguments=(value,))
+    return Predicate('identity', args=(value,))
 
 
 def unary_op(name):
@@ -152,7 +152,7 @@ class Context:
         self.prefix = prefix
 
     def __call__(self, predicate: Predicate, *argv, **kwargs):
-        callback = f'{self.prefix}_{predicate.operation}'
+        callback = f'_{predicate.operation}'
 
         if hasattr(self, callback):
             return getattr(self, callback)(predicate, *argv, **kwargs)
@@ -169,19 +169,22 @@ class Context:
 class Boolean(Context):
     __slots__ = ()
 
-    def __init__(self, prefix: str = 'bool'):
+    def __init__(self, prefix: str = 'boolean'):
         super().__init__(prefix=prefix)
 
-    def bool_and(self, predicate, *argv, **kwargs):
+    def _identity(self, predicate, *argv, **kwargs):
+        return predicate.args[0]
+
+    def _and(self, predicate, *argv, **kwargs):
         return all(self(arg, *argv, **kwargs) for arg in predicate.args)
 
-    def bool_xor(self, predicate, *argv, **kwargs):
+    def _xor(self, predicate, *argv, **kwargs):
         return bool(sum(1
                         for arg in predicate.args
                         if bool(self(arg, *argv, **kwargs))) % 2)
 
-    def bool_or(self, predicate, *argv, **kwargs):
+    def _or(self, predicate, *argv, **kwargs):
         return any(self(arg, *argv, **kwargs) for arg in predicate.args)
 
-    def bool_invert(self, predicate, *argv, **kwargs):
+    def _invert(self, predicate, *argv, **kwargs):
         return not self(predicate.args[0], *argv, **kwargs)

@@ -13,7 +13,7 @@ class Check(Predicate):
         super().__init__()
         self.index = index
 
-    def bool(self, context: Boolean, data: dict, **kwargs):
+    def boolean(self, context: Boolean, data: dict, **kwargs):
         return bool(data[self.index])
 
 
@@ -89,10 +89,19 @@ def test_complex(context, inputs):
     assert context(Check(0) & Check(1) | Check(2) ^ Check(3), inputs) == test(*inputs)
 
 
-
 @given(inputs=bool_vector(4))
 def test_parentheses(context, inputs):
     def test(a, b, c, d):
         return a and ((b or c) ^ d)
 
     assert context(Check(0) & ((Check(1) | Check(2)) ^ Check(3)), inputs) == test(*inputs)
+
+
+@given(inputs=bool_vector(3))
+def test_identity(context, inputs):
+    def test(a, b, c):
+        return a and b and c
+
+    assert context(inputs[0] & Check(1) & Check(2), inputs) == test(*inputs)
+    assert context(Check(0) & inputs[1] & Check(2), inputs) == test(*inputs)
+    assert context(Check(0) & Check(1) & inputs[2], inputs) == test(*inputs)
