@@ -1,6 +1,9 @@
 
 import pytest
 
+from hypothesis import given
+from hypothesis import strategies as h_st
+
 from pydicates import Predicate, Boolean
 
 
@@ -14,76 +17,82 @@ class Check(Predicate):
         return bool(data[self.index])
 
 
-@pytest.fixture
+def bool_vector(number: int):
+    arguments = [h_st.booleans() for i in range(number)]
+    return h_st.tuples(*arguments)
+
+
+@pytest.fixture(scope="session")
 def context():
     return Boolean()
 
 
-def test_not(context):
-    assert context(Check(0), [True])
-    assert context(~Check(0), [False])
-
-    assert not context(Check(0), [False])
-    assert not context(~Check(0), [True])
+@given(inputs=bool_vector(1))
+def test_not(context, inputs):
+    assert context(Check(0), inputs) == inputs[0]
+    assert context(~Check(0), inputs) == (not inputs[0])
 
 
-def test_and(context):
-    assert context(Check(0) & Check(1), [True, True])
-    assert not context(Check(0) & Check(1), [True, False])
-    assert not context(Check(0) & Check(1), [False, True])
-    assert not context(Check(0) & Check(1), [False, False])
+@given(inputs=bool_vector(2))
+def test_and(context, inputs):
+    def test(a, b):
+        return a and b
+
+    assert context(Check(0) & Check(1), inputs) == test(*inputs)
 
 
-def test_complex_and(context):
-    assert context(Check(0) & Check(1) & Check(2), [True, True, True])
-    assert not context(Check(0) & Check(1) & Check(2), [True, True, False])
-    assert not context(Check(0) & Check(1) & Check(2), [True, False, True])
-    assert not context(Check(0) & Check(1) & Check(2), [True, False, False])
-    assert not context(Check(0) & Check(1) & Check(2), [False, True, True])
-    assert not context(Check(0) & Check(1) & Check(2), [False, True, False])
-    assert not context(Check(0) & Check(1) & Check(2), [False, False, True])
-    assert not context(Check(0) & Check(1) & Check(2), [False, False, False])
+@given(inputs=bool_vector(3))
+def test_complex_and(context, inputs):
+    def test(a, b, c):
+        return a and b and c
 
-    assert context(Check(0) & Check(1) & ~Check(2), [True, True, False])
-    assert context(Check(0) & ~Check(1) & Check(2), [True, False, True])
-    assert context(Check(0) & ~Check(1) & ~Check(2), [True, False, False])
-    assert context(~Check(0) & Check(1) & Check(2), [False, True, True])
-    assert context(~Check(0) & Check(1) & ~Check(2), [False, True, False])
-    assert context(~Check(0) & ~Check(1) & Check(2), [False, False, True])
-    assert context(~Check(0) & ~Check(1) & ~Check(2), [False, False, False])
+    assert context(Check(0) & Check(1) & Check(2), inputs) == test(*inputs)
 
 
-def test_or(context):
-    assert context(Check(0) | Check(1), [True, True])
-    assert context(Check(0) | Check(1), [True, False])
-    assert context(Check(0) | Check(1), [False, True])
-    assert not context(Check(0) | Check(1), [False, False])
+@given(inputs=bool_vector(2))
+def test_or(context, inputs):
+    def test(a, b):
+        return a or b
+
+    assert context(Check(0) | Check(1), inputs) == test(*inputs)
 
 
-def test_complex_or(context):
-    assert context(Check(0) | Check(1) | Check(2), [True, True, True])
-    assert context(Check(0) | Check(1) | Check(2), [True, True, False])
-    assert context(Check(0) | Check(1) | Check(2), [True, False, True])
-    assert context(Check(0) | Check(1) | Check(2), [True, False, False])
-    assert context(Check(0) | Check(1) | Check(2), [False, True, True])
-    assert context(Check(0) | Check(1) | Check(2), [False, True, False])
-    assert context(Check(0) | Check(1) | Check(2), [False, False, True])
-    assert not context(Check(0) | Check(1) | Check(2), [False, False, False])
+@given(inputs=bool_vector(3))
+def test_complex_or(context, inputs):
+    def test(a, b, c):
+        return a or b or c
+
+    assert context(Check(0) | Check(1) | Check(2), inputs) == test(*inputs)
 
 
-def test_xor(context):
-    assert not context(Check(0) ^ Check(1), [True, True])
-    assert context(Check(0) ^ Check(1), [True, False])
-    assert context(Check(0) ^ Check(1), [False, True])
-    assert not context(Check(0) ^ Check(1), [False, False])
+@given(inputs=bool_vector(2))
+def test_xor(context, inputs):
+    def test(a, b):
+        return a ^ b
+
+    assert context(Check(0) ^ Check(1), inputs) == test(*inputs)
 
 
-def test_complex_xor(context):
-    assert context(Check(0) ^ Check(1) ^ Check(2), [True, True, True])
-    assert not context(Check(0) ^ Check(1) ^ Check(2), [True, True, False])
-    assert not context(Check(0) ^ Check(1) ^ Check(2), [True, False, True])
-    assert context(Check(0) ^ Check(1) ^ Check(2), [True, False, False])
-    assert not context(Check(0) ^ Check(1) ^ Check(2), [False, True, True])
-    assert context(Check(0) ^ Check(1) ^ Check(2), [False, True, False])
-    assert context(Check(0) ^ Check(1) ^ Check(2), [False, False, True])
-    assert not context(Check(0) ^ Check(1) ^ Check(2), [False, False, False])
+@given(inputs=bool_vector(3))
+def test_complex_xor(context, inputs):
+    def test(a, b, c):
+        return a ^ b ^ c
+
+    assert context(Check(0) ^ Check(1) ^ Check(2), inputs) == test(*inputs)
+
+
+@given(inputs=bool_vector(4))
+def test_complex(context, inputs):
+    def test(a, b, c, d):
+        return a and b or c ^ d
+
+    assert context(Check(0) & Check(1) | Check(2) ^ Check(3), inputs) == test(*inputs)
+
+
+
+@given(inputs=bool_vector(4))
+def test_parentheses(context, inputs):
+    def test(a, b, c, d):
+        return a and ((b or c) ^ d)
+
+    assert context(Check(0) & ((Check(1) | Check(2)) ^ Check(3)), inputs) == test(*inputs)
