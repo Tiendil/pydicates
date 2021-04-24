@@ -11,6 +11,10 @@ from collections.abc import Iterable, Mapping
 
 # Do not redefine __bool__ (?) — it is used by python conditions
 
+# do not redefine comparison operations since we can not chain them
+# a < b < c is equal to (a < b) and (b < c)
+# so "and" block predicates spread over comparison groups
+
 
 BINARY_OPERATIONS = {'__add__': 'add',
                      '__sub__': 'sub',
@@ -35,13 +39,6 @@ BINARY_I_OPERATIONS = {f'__i{name[2:]}': op for name, op in BINARY_OPERATIONS.it
 UNARY_OPERATIONS = {'__neg__': 'neg',
                     '__pos__': 'pos',
                     '__invert__': 'invert'}
-
-COMPARISON_OPERATIONS = {'__lt__': 'lt',
-                         '__le__': 'le',
-                         '__eq__': 'eq',
-                         '__ne__': 'ne',
-                         '__gt__': 'gt',
-                         '__ge__': 'ge'}
 
 
 def normalize_predicate(value: typing.Any) -> 'Predicate':
@@ -91,9 +88,9 @@ def binary_i_op(name):
 
 class Meta(type):
 
-    def __new__(mcls, name, bases, attrs):  # noqa: disable=C901
+    def __new__(mcls, class_name, bases, attrs):  # noqa: disable=C901
 
-        if name.startswith('None'):
+        if class_name.startswith('None'):
             return None
 
         for name, op in BINARY_OPERATIONS.items():
@@ -112,11 +109,7 @@ class Meta(type):
             if name not in attrs:
                 attrs[name] = unary_op(op)
 
-        for name, op in COMPARISON_OPERATIONS.items():
-            if name not in attrs:
-                attrs[name] = binary_op(op)
-
-        return super(Meta, mcls).__new__(mcls, name, bases, attrs)
+        return super(Meta, mcls).__new__(mcls, class_name, bases, attrs)
 
 
 class Predicate(metaclass=Meta):
@@ -163,7 +156,7 @@ class Context:
         # TODO: invoke __call__ instead? To allow callbacks as predicates
 
         # TODO: custom exception
-        raise Exception(f'Unknown operation {predicate.operation}')
+        raise Exception(f'Unknown operation "{predicate.operation}"')
 
 
 class Boolean(Context):
@@ -176,7 +169,7 @@ class Boolean(Context):
         return predicate.args[0]
 
     def _and(self, predicate, *argv, **kwargs):
-        return all(self(arg, *argv, **kwargs) for arg in predicate.args)
+        return all(bool(self(arg, *argv, **kwargs)) for arg in predicate.args)
 
     def _xor(self, predicate, *argv, **kwargs):
         return bool(sum(1
@@ -184,7 +177,15 @@ class Boolean(Context):
                         if bool(self(arg, *argv, **kwargs))) % 2)
 
     def _or(self, predicate, *argv, **kwargs):
-        return any(self(arg, *argv, **kwargs) for arg in predicate.args)
+        return any(bool(self(arg, *argv, **kwargs)) for arg in predicate.args)
 
     def _invert(self, predicate, *argv, **kwargs):
         return not self(predicate.args[0], *argv, **kwargs)
+
+    def _lt(self, predicate, *argv, **kwargs):
+        return (self(predicate.args[0], *argv, **kwargs) <
+                self(predicate.args[1], *argv, **kwargs))
+
+    # def _gt(self, predicate, *argv, **kwargs):
+    #     return (self(predicate.args[0], *argv, **kwargs) >
+    #             self(predicate.args[1], *argv, **kwargs))
