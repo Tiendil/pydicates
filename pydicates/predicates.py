@@ -1,4 +1,6 @@
 
+import typing
+
 from collections.abc import Iterable, Mapping
 
 # candidates to redefine:
@@ -26,9 +28,9 @@ BINARY_OPERATIONS = {'__add__': 'add',
                      '__or__': 'or'}
 
 
-BINARY_R_OPERATIONS = {f'__r{name[2:]}': op for name, op in BINARY_R_OPERATIONS.items()}
+BINARY_R_OPERATIONS = {f'__r{name[2:]}': op for name, op in BINARY_OPERATIONS.items()}
 
-BINARY_I_OPERATIONS = {f'__i{name[2:]}': op for name, op in BINARY_R_OPERATIONS.items()}
+BINARY_I_OPERATIONS = {f'__i{name[2:]}': op for name, op in BINARY_OPERATIONS.items()}
 
 UNARY_OPERATIONS = {'__neg__': 'neg',
                     '__pos__': 'pos',
@@ -120,20 +122,27 @@ class Meta(type):
 class Predicate(metaclass=Meta):
     __slots__ = ('operation', 'args', 'kwargs')
 
-    def __init__(self, operation: str, args: Iterable = (), kwargs: Mapping = None):
+    def __init__(self,
+                 operation: typing.Optional[str] = None,
+                 args: Iterable = (),
+                 kwargs: Mapping = None):
+
+        if operation is None:
+            operation = self.__class__.__name__.lower()
 
         if kwargs is None:
             kwargs = {}
 
         self.operation = operation
-        self.args = tuple(arguments)
+        self.args = tuple(args)
         self.kwargs = kwargs
 
+    # TODO: improve __str__ and __repr
     def __str__(self):
-        raise NotImplementedError()
+        return f'{self.operation}({self.args}, {self.kwargs})'
 
     def __repr__(self):
-        raise NotImplementedError()
+        return f'{self.operation}({self.args}, {self.kwargs})'
 
 
 class Context:
@@ -143,13 +152,13 @@ class Context:
         self.prefix = prefix
 
     def __call__(self, predicate: Predicate, *argv, **kwargs):
-        callback = f'{self.orefix}{predicate.operation}'
+        callback = f'{self.prefix}_{predicate.operation}'
 
         if hasattr(self, callback):
-            return getattr(self, callback)(*argv, **kwargs)
+            return getattr(self, callback)(predicate, *argv, **kwargs)
 
-        if hasattr(predicate, callback):
-            return getattr(predicate, callback)(self, *argv, **kwargs)
+        if hasattr(predicate, self.prefix):
+            return getattr(predicate, self.prefix)(self, *argv, **kwargs)
 
         # TODO: invoke __call__ instead? To allow callbacks as predicates
 
@@ -160,19 +169,19 @@ class Context:
 class Boolean(Context):
     __slots__ = ()
 
-    def __init__(self, prefix: str = 'bool_'):
+    def __init__(self, prefix: str = 'bool'):
         super().__init__(prefix=prefix)
 
+    def bool_and(self, predicate, *argv, **kwargs):
+        return all(self(arg, *argv, **kwargs) for arg in predicate.args)
 
-    # TODO: I think prefixes is not required
-    def bool_and(self):
-        pass
+    def bool_xor(self, predicate, *argv, **kwargs):
+        return bool(sum(1
+                        for arg in predicate.args
+                        if bool(self(arg, *argv, **kwargs))) % 2)
 
-    def bool_xor(self):
-        pass
+    def bool_or(self, predicate, *argv, **kwargs):
+        return any(self(arg, *argv, **kwargs) for arg in predicate.args)
 
-    def bool_or(self):
-        pass
-
-    def bool_invert(self):
-        pass
+    def bool_invert(self, predicate, *argv, **kwargs):
+        return not self(predicate.args[0], *argv, **kwargs)
