@@ -82,3 +82,32 @@ def test_identity(context, inputs):
     assert context(inputs[0] & P(1) & P(2), inputs) == test(*inputs)
     assert context(P(0) & inputs[1] & P(2), inputs) == test(*inputs)
     assert context(P(0) & P(1) & inputs[2], inputs) == test(*inputs)
+
+
+@given(inputs=bool_vector(4))
+def test_inplace_change(context, inputs):
+    def test(a, b, c, d):
+        return ((a and b) or c) ^ d
+
+    p = True
+
+    p &= P(0)
+    p &= P(1)
+    p |= inputs[2]
+    p ^= P(3)
+
+    assert context(p, inputs) == test(*inputs)
+
+
+@given(inputs=bool_vector(4))
+def test_complexinplace_change(context, inputs):
+    def test(a, b, c, d):
+        return (a and b) or (c ^ d)
+
+    p = True
+
+    p &= P(0)
+    p &= P(1)
+    p |= P(2) ^ P(3)
+
+    assert context(p, inputs) == test(*inputs)

@@ -1,4 +1,5 @@
 
+import copy
 import typing
 
 from collections.abc import Iterable, Mapping
@@ -81,7 +82,7 @@ def binary_i_op(name):
         other = normalize_predicate(other)
 
         self.operation = name
-        self.args = tuple(left, other)
+        self.args = (left, other)
 
         return self
 
