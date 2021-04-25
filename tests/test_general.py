@@ -1,7 +1,12 @@
 
 import pytest
 
-from pydicates import Predicate, UnknownOperation
+from pydicates import Predicate, UnknownOperation, Boolean
+
+
+@pytest.fixture(scope="module")
+def context():
+    return Boolean()
 
 
 def test_unknown_context_operation(context):

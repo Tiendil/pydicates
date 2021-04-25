@@ -1,7 +1,20 @@
 
+import pytest
+
 from hypothesis import given
 
 from .helpers import P, bool_vector
+
+from pydicates import BooleanMixin, Context
+
+
+class ContextForTests(BooleanMixin, Context):
+    pass
+
+
+@pytest.fixture(scope="module")
+def context():
+    return ContextForTests()
 
 
 @given(inputs=bool_vector(1))
@@ -100,7 +113,7 @@ def test_inplace_change(context, inputs):
 
 
 @given(inputs=bool_vector(4))
-def test_complexinplace_change(context, inputs):
+def test_complex_inplace_change(context, inputs):
     def test(a, b, c, d):
         return (a and b) or (c ^ d)
 

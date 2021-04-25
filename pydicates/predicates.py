@@ -12,12 +12,6 @@ from . import exceptions
 # __call__
 # __getattr__
 
-# Do not redefine __bool__ (?) — it is used by python conditions
-
-# do not redefine comparison operations since we can not chain them
-# a < b < c is equal to (a < b) and (b < c)
-# so "and" block predicates spread over comparison groups
-
 
 BINARY_OPERATIONS = {'__add__': 'add',
                      '__sub__': 'sub',
@@ -42,6 +36,21 @@ BINARY_I_OPERATIONS = {f'__i{name[2:]}': op for name, op in BINARY_OPERATIONS.it
 UNARY_OPERATIONS = {'__neg__': 'neg',
                     '__pos__': 'pos',
                     '__invert__': 'invert'}
+
+# Do not redefine conversions __bool__, __complex__, __float__, __int__
+# since Python implicity check returned types
+# and produce errors like: TypeError: __complex__ returned non-complex (type Predicate)
+
+
+# we can not chain redefined comparisons
+# a < b < c is equal to (a < b) and (b < c)
+# so, "and" block predicates spread over comparison groups
+COMPARISON_OPERATIONS = {'__lt__': 'lt',
+                         '__le__': 'le',
+                         '__eq__': 'eq',
+                         '__ne__': 'ne',
+                         '__gt__': 'gt',
+                         '__ge__': 'ge'}
 
 
 def normalize_predicate(value: typing.Any) -> 'Predicate':
@@ -112,6 +121,10 @@ class Meta(type):
             if name not in attrs:
                 attrs[name] = unary_op(op)
 
+        for name, op in COMPARISON_OPERATIONS.items():
+            if name not in attrs:
+                attrs[name] = binary_op(op)
+
         return super(Meta, mcls).__new__(mcls, class_name, bases, attrs)
 
 
@@ -144,44 +157,32 @@ class Predicate(metaclass=Meta):
 class Context:
     __slots__ = ('prefix',)
 
-    def __init__(self, prefix: str):
+    def __init__(self, prefix: typing.Optional[str] = None):
+        if prefix is None:
+            prefix = self.__class__.__name__
+
         self.prefix = prefix
 
     def __call__(self, predicate: Predicate, *argv, **kwargs):
 
         # use Duck Typing for speed and flexibility
 
+        # check if context define logic for predicate
         if hasattr(predicate, 'operation'):
             callback = f'_{predicate.operation}'
 
             if hasattr(self, callback):
                 return getattr(self, callback)(predicate, *argv, **kwargs)
 
+        # check if predicate define logic for context
         if hasattr(predicate, self.prefix):
             return getattr(predicate, self.prefix)(self, *argv, **kwargs)
 
-        raise exceptions.UnknownOperation(predicate.operation)
+        # check if predicate define common logic
+        if callable(predicate):
+            return predicate(self, *argv, **kwargs)
 
-
-class Boolean(Context):
-    __slots__ = ()
-
-    def __init__(self, prefix: str = 'boolean'):
-        super().__init__(prefix=prefix)
+        raise exceptions.UnknownOperation(self, predicate)
 
     def _identity(self, predicate, *argv, **kwargs):
         return predicate.args[0]
-
-    def _and(self, predicate, *argv, **kwargs):
-        return all(bool(self(arg, *argv, **kwargs)) for arg in predicate.args)
-
-    def _xor(self, predicate, *argv, **kwargs):
-        return bool(sum(1
-                        for arg in predicate.args
-                        if bool(self(arg, *argv, **kwargs))) % 2)
-
-    def _or(self, predicate, *argv, **kwargs):
-        return any(bool(self(arg, *argv, **kwargs)) for arg in predicate.args)
-
-    def _invert(self, predicate, *argv, **kwargs):
-        return not self(predicate.args[0], *argv, **kwargs)
