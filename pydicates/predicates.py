@@ -3,6 +3,8 @@ import typing
 
 from collections.abc import Iterable, Mapping
 
+from . import exceptions
+
 # candidates to redefine:
 # __getitem__
 # __contains__
@@ -145,18 +147,19 @@ class Context:
         self.prefix = prefix
 
     def __call__(self, predicate: Predicate, *argv, **kwargs):
-        callback = f'_{predicate.operation}'
 
-        if hasattr(self, callback):
-            return getattr(self, callback)(predicate, *argv, **kwargs)
+        # use Duck Typing for speed and flexibility
+
+        if hasattr(predicate, 'operation'):
+            callback = f'_{predicate.operation}'
+
+            if hasattr(self, callback):
+                return getattr(self, callback)(predicate, *argv, **kwargs)
 
         if hasattr(predicate, self.prefix):
             return getattr(predicate, self.prefix)(self, *argv, **kwargs)
 
-        # TODO: invoke __call__ instead? To allow callbacks as predicates
-
-        # TODO: custom exception
-        raise Exception(f'Unknown operation "{predicate.operation}"')
+        raise exceptions.UnknownOperation(predicate.operation)
 
 
 class Boolean(Context):
@@ -181,11 +184,3 @@ class Boolean(Context):
 
     def _invert(self, predicate, *argv, **kwargs):
         return not self(predicate.args[0], *argv, **kwargs)
-
-    def _lt(self, predicate, *argv, **kwargs):
-        return (self(predicate.args[0], *argv, **kwargs) <
-                self(predicate.args[1], *argv, **kwargs))
-
-    # def _gt(self, predicate, *argv, **kwargs):
-    #     return (self(predicate.args[0], *argv, **kwargs) >
-    #             self(predicate.args[1], *argv, **kwargs))
