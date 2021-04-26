@@ -124,3 +124,19 @@ def test_complex_inplace_change(context, inputs):
     p |= P(2) ^ P(3)
 
     assert context(p, inputs) == test(*inputs)
+
+
+@given(inputs=bool_vector(2))
+def test_inplace_change_with_predicate_replace(inputs):
+
+    # do not define all default methods
+    context = Context()
+
+    def test(a, b):
+        return a and b
+
+    p = P(0)
+    p &= P(1)
+
+    # Must not failed due predicate moving in binary_i_op
+    assert context(p, inputs) == test(*inputs)
