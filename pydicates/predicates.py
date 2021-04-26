@@ -43,8 +43,9 @@ UNARY_OPERATIONS = {'__neg__': 'neg',
 
 
 # we can not chain redefined comparisons
-# a < b < c is equal to (a < b) and (b < c)
-# so, "and" block predicates spread over comparison groups
+# "a < b < c" is equal to "(a < b) and (b < c)"
+# which translates to "b < c", becouse (a < b) is Predicate and always True (?)
+# so, predicates can not spread over comparison chains
 COMPARISON_OPERATIONS = {'__lt__': 'lt',
                          '__le__': 'le',
                          '__eq__': 'eq',
@@ -87,11 +88,17 @@ def binary_r_op(name):
 def binary_i_op(name):
 
     def method(self, other):
+
+        # ensure that current predicate will safe its class and attributes
         left = copy.copy(self)
+
         other = normalize_predicate(other)
 
+        # that redifinition should be correct,
+        # since operation — is standard operation and should be supported by Context class
         self.operation = name
         self.args = (left, other)
+        self.kwargs = {}
 
         return self
 

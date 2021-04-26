@@ -39,7 +39,7 @@ def test_lt(context, inputs):
 def test_chain_lt(context, inputs):
     def test(a, b, c):
         # "a < b < c" translates to "(a < b) and (b < c)"
-        # which translates to "b < c"
+        # which translates to "b < c", becouse (a < b) is Predicate and always True (?)
         return b < c
 
     assert context(P(0) < P(1) < P(2), inputs) == test(*inputs)
