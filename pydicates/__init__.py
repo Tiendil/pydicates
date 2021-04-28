@@ -1,14 +1,16 @@
 
 from .predicates import Predicate, Context
-from .mixins import BooleanMixin, ComparisonMixin, MathMixin, Boolean
-from .exceptions import Error, UnknownOperation
+from .operations import BOOLEANS, COMPARISONS, MATH
+from .exceptions import Error, UnknownOperation, OperationAlreadyRegistered
+from .contexts import common
 
 
 __all__ = ['Predicate',
            'Context',
-           'BooleanMixin',
-           'ComparisonMixin',
-           'MathMixin',
-           'Boolean',
+           'BOOLEANS',
+           'COMPARISONS',
+           'MATH',
+           'common',
            'Error',
-           'UnknownOperation']
+           'UnknownOperation',
+           'OperationAlreadyRegistered']
