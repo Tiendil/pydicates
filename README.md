@@ -16,7 +16,7 @@ pip install pydicates
 
 ## Use
 
-[Minimal example](https://github.com/Tiendil/pydicates/examples/simplest.py)
+[Minimal example](https://github.com/Tiendil/pydicates/tree/develop/examples/simplest.py)
 
 ```python
 from pydicates import Predicate, common
@@ -42,11 +42,11 @@ assert common(HasTag('a') & ~HasTag('e'), document)
 assert common(HasTag('a') & (HasTag('e') | HasTag('d')), document)
 ```
 
-More examples can be found in [./examples](https://github.com/Tiendil/pydicates/examples) directory.
+More examples can be found in [./examples](https://github.com/Tiendil/tree/develop/pydicates/examples) directory.
 
-See [./examples/documents_check.py](https://github.com/Tiendil/pydicates/examples/documents_check.py) for API description.
+See [./examples/documents_check.py](https://github.com/Tiendil/pydicates/tree/develop/examples/documents_check.py) for API description.
 
-See [./tests](https://github.com/Tiendil/pydicates/tests) for more examples.
+See [./tests](https://github.com/Tiendil/pydicates/tree/develop/tests) for more examples.
 
 ## Limitations
 
