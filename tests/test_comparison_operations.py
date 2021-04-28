@@ -1,9 +1,7 @@
 
-import pytest
-
 from hypothesis import given
 
-from pydicates import Context, COMPARISONS, UnknownOperation
+from pydicates import Context, COMPARISONS
 
 from .helpers import P, simple_predicate, int_vector
 
@@ -43,8 +41,7 @@ def test_chain_lt(inputs):
     assert context(P(0) < P(1) < inputs[2], inputs) == test(*inputs)
     assert context(P(0) < inputs[1] < P(2), inputs) == test(*inputs)
 
-    with pytest.raises(UnknownOperation):
-        context(P(0) < inputs[1] < inputs[2], inputs)
+    assert isinstance(P(0) < inputs[1] < inputs[2], bool)
 
     assert context(inputs[0] < P(1) < P(2), inputs) == test(*inputs)
     assert context(inputs[0] < P(1) < inputs[2], inputs) == test(*inputs)
@@ -52,11 +49,9 @@ def test_chain_lt(inputs):
     if inputs[0] < inputs[1]:
         assert context(inputs[0] < inputs[1] < P(2), inputs) == test(*inputs)
     else:
-        with pytest.raises(UnknownOperation):
-            context(inputs[0] < inputs[1] < P(2), inputs)
+        assert isinstance(inputs[0] < inputs[1] < P(2), bool)
 
-    with pytest.raises(UnknownOperation):
-        context(inputs[0] < inputs[1] < inputs[2], inputs)
+    assert isinstance(inputs[0] < inputs[1] < inputs[2], bool)
 
 
 @given(inputs=int_vector(2))

@@ -174,7 +174,7 @@ class Context:
 
         self._operations[name] = operation
 
-    def bulk_register(self, operations: dict[str, Callable]):
+    def bulk_register(self, operations: dict):
         for name, operation in operations.items():
             self.register(name, operation)
 

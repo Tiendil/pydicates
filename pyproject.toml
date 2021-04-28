@@ -7,10 +7,9 @@ authors = ["Aliaksei Yaletski (Tiendil) <a.eletsky@gmail.com>"]
 license = "BSD3"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6"
 hypothesis = "^5"
 typeguard = "^2"
-pretty_errors = "^1"

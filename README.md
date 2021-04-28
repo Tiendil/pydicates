@@ -2,7 +2,7 @@
 
 Library for constuction predicates like `(OwnedBy('alex') | OwnedBy('alice')) & HasTag('game-design')` and applying them to other objects.
 
-# Motivation
+## Motivation
 
 I tired from reimplementation of custom predicate logic in my pet projects. So, I implemented that library.
 
