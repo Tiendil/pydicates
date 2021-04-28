@@ -42,7 +42,7 @@ assert common(HasTag('a') & ~HasTag('e'), document)
 assert common(HasTag('a') & (HasTag('e') | HasTag('d')), document)
 ```
 
-More examples can be found in [./examples](https://github.com/Tiendil/tree/develop/pydicates/examples) directory.
+More examples can be found in [./examples](https://github.com/Tiendil/pydicates/tree/develop/examples) directory.
 
 See [./examples/documents_check.py](https://github.com/Tiendil/pydicates/tree/develop/examples/documents_check.py) for API description.
 
