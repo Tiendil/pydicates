@@ -1,30 +1,24 @@
 
-import pytest
-
 from hypothesis import given
 
-from .helpers import P, bool_vector
+from pydicates import Context, BOOLEANS
 
-from pydicates import BooleanMixin, Context
-
-
-class ContextForTests(BooleanMixin, Context):
-    pass
+from .helpers import P, simple_predicate, bool_vector
 
 
-@pytest.fixture(scope="module")
-def context():
-    return ContextForTests()
+context = Context()
+context.bulk_register(BOOLEANS)
+context.register('simple_predicate', simple_predicate)
 
 
 @given(inputs=bool_vector(1))
-def test_not(context, inputs):
+def test_not(inputs):
     assert context(P(0), inputs) == inputs[0]
     assert context(~P(0), inputs) == (not inputs[0])
 
 
 @given(inputs=bool_vector(2))
-def test_and(context, inputs):
+def test_and(inputs):
     def test(a, b):
         return a and b
 
@@ -32,7 +26,7 @@ def test_and(context, inputs):
 
 
 @given(inputs=bool_vector(3))
-def test_complex_and(context, inputs):
+def test_complex_and(inputs):
     def test(a, b, c):
         return a and b and c
 
@@ -40,7 +34,7 @@ def test_complex_and(context, inputs):
 
 
 @given(inputs=bool_vector(2))
-def test_or(context, inputs):
+def test_or(inputs):
     def test(a, b):
         return a or b
 
@@ -48,7 +42,7 @@ def test_or(context, inputs):
 
 
 @given(inputs=bool_vector(3))
-def test_complex_or(context, inputs):
+def test_complex_or(inputs):
     def test(a, b, c):
         return a or b or c
 
@@ -56,7 +50,7 @@ def test_complex_or(context, inputs):
 
 
 @given(inputs=bool_vector(2))
-def test_xor(context, inputs):
+def test_xor(inputs):
     def test(a, b):
         return a ^ b
 
@@ -64,7 +58,7 @@ def test_xor(context, inputs):
 
 
 @given(inputs=bool_vector(3))
-def test_complex_xor(context, inputs):
+def test_complex_xor(inputs):
     def test(a, b, c):
         return a ^ b ^ c
 
@@ -72,7 +66,7 @@ def test_complex_xor(context, inputs):
 
 
 @given(inputs=bool_vector(4))
-def test_complex(context, inputs):
+def test_complex(inputs):
     def test(a, b, c, d):
         return a and b or c ^ d
 
@@ -80,7 +74,7 @@ def test_complex(context, inputs):
 
 
 @given(inputs=bool_vector(4))
-def test_parentheses(context, inputs):
+def test_parentheses(inputs):
     def test(a, b, c, d):
         return a and ((b or c) ^ d)
 
@@ -88,7 +82,7 @@ def test_parentheses(context, inputs):
 
 
 @given(inputs=bool_vector(3))
-def test_identity(context, inputs):
+def test_identity(inputs):
     def test(a, b, c):
         return a and b and c
 
@@ -98,45 +92,29 @@ def test_identity(context, inputs):
 
 
 @given(inputs=bool_vector(4))
-def test_inplace_change(context, inputs):
+def test_inplace_change(inputs):
     def test(a, b, c, d):
         return ((a and b) or c) ^ d
 
-    p = True
+    predicate = True
 
-    p &= P(0)
-    p &= P(1)
-    p |= inputs[2]
-    p ^= P(3)
+    predicate &= P(0)
+    predicate &= P(1)
+    predicate |= inputs[2]
+    predicate ^= P(3)
 
-    assert context(p, inputs) == test(*inputs)
+    assert context(predicate, inputs) == test(*inputs)
 
 
 @given(inputs=bool_vector(4))
-def test_complex_inplace_change(context, inputs):
+def test_complex_inplace_change(inputs):
     def test(a, b, c, d):
         return (a and b) or (c ^ d)
 
-    p = True
+    predicate = True
 
-    p &= P(0)
-    p &= P(1)
-    p |= P(2) ^ P(3)
+    predicate &= P(0)
+    predicate &= P(1)
+    predicate |= P(2) ^ P(3)
 
-    assert context(p, inputs) == test(*inputs)
-
-
-@given(inputs=bool_vector(2))
-def test_inplace_change_with_predicate_replace(inputs):
-
-    # do not define all default methods
-    context = Context()
-
-    def test(a, b):
-        return a and b
-
-    p = P(0)
-    p &= P(1)
-
-    # Must not failed due predicate moving in binary_i_op
-    assert context(p, inputs) == test(*inputs)
+    assert context(predicate, inputs) == test(*inputs)

@@ -1,11 +1,9 @@
 
-import pytest
-
 from hypothesis import given
 
-from .helpers import P, int_vector
+from pydicates import Context, COMPARISONS
 
-from pydicates import ComparisonMixin, Context, UnknownOperation
+from .helpers import P, simple_predicate, int_vector
 
 ###########################################
 # We can not chain redefined comparisons
@@ -16,17 +14,13 @@ from pydicates import ComparisonMixin, Context, UnknownOperation
 ###########################################
 
 
-class ContextForTests(ComparisonMixin, Context):
-    pass
-
-
-@pytest.fixture(scope="module")
-def context():
-    return ContextForTests()
+context = Context()
+context.bulk_register(COMPARISONS)
+context.register('simple_predicate', simple_predicate)
 
 
 @given(inputs=int_vector(2))
-def test_lt(context, inputs):
+def test_lt(inputs):
     def test(a, b):
         return a < b
 
@@ -36,18 +30,18 @@ def test_lt(context, inputs):
 
 
 @given(inputs=int_vector(3))
-def test_chain_lt(context, inputs):
+def test_chain_lt(inputs):
+    # pylint: disable=W0613
     def test(a, b, c):
         # "a < b < c" translates to "(a < b) and (b < c)"
-        # which translates to "b < c", becouse (a < b) is Predicate and always True (?)
+        # which translates to "b < c", because (a < b) is Predicate and always True (?)
         return b < c
 
     assert context(P(0) < P(1) < P(2), inputs) == test(*inputs)
     assert context(P(0) < P(1) < inputs[2], inputs) == test(*inputs)
     assert context(P(0) < inputs[1] < P(2), inputs) == test(*inputs)
 
-    with pytest.raises(UnknownOperation):
-        context(P(0) < inputs[1] < inputs[2], inputs)
+    assert isinstance(P(0) < inputs[1] < inputs[2], bool)
 
     assert context(inputs[0] < P(1) < P(2), inputs) == test(*inputs)
     assert context(inputs[0] < P(1) < inputs[2], inputs) == test(*inputs)
@@ -55,15 +49,13 @@ def test_chain_lt(context, inputs):
     if inputs[0] < inputs[1]:
         assert context(inputs[0] < inputs[1] < P(2), inputs) == test(*inputs)
     else:
-        with pytest.raises(UnknownOperation):
-            context(inputs[0] < inputs[1] < P(2), inputs)
+        assert isinstance(inputs[0] < inputs[1] < P(2), bool)
 
-    with pytest.raises(UnknownOperation):
-        context(inputs[0] < inputs[1] < inputs[2], inputs)
+    assert isinstance(inputs[0] < inputs[1] < inputs[2], bool)
 
 
 @given(inputs=int_vector(2))
-def test_le(context, inputs):
+def test_le(inputs):
     def test(a, b):
         return a <= b
 
@@ -73,7 +65,7 @@ def test_le(context, inputs):
 
 
 @given(inputs=int_vector(2))
-def test_eq(context, inputs):
+def test_eq(inputs):
     def test(a, b):
         return a == b
 
@@ -83,7 +75,7 @@ def test_eq(context, inputs):
 
 
 @given(inputs=int_vector(2))
-def test_ne(context, inputs):
+def test_ne(inputs):
     def test(a, b):
         return a != b
 
@@ -93,7 +85,7 @@ def test_ne(context, inputs):
 
 
 @given(inputs=int_vector(2))
-def test_gt(context, inputs):
+def test_gt(inputs):
     def test(a, b):
         return a > b
 
@@ -103,7 +95,7 @@ def test_gt(context, inputs):
 
 
 @given(inputs=int_vector(2))
-def test_ge(context, inputs):
+def test_ge(inputs):
     def test(a, b):
         return a >= b
 

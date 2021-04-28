@@ -1,16 +1,11 @@
 
 import pytest
 
-from pydicates import Predicate, UnknownOperation, Boolean
+from pydicates import Predicate, UnknownOperation, common
 
 
-@pytest.fixture(scope="module")
-def context():
-    return Boolean()
-
-
-def test_unknown_context_operation(context):
-    p = Predicate(operation='unknown')
+def test_unknown_context_operation():
+    predicate = Predicate(operation='unknown', data=())
 
     with pytest.raises(UnknownOperation):
-        context(p, ())
+        common(predicate, ())
